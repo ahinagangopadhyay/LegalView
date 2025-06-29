@@ -1,6 +1,6 @@
 flask==2.3.3
 transformers==4.40.1
-torch==2.2.2
+torch==2.3.0
 PyPDF2==3.0.1
 spacy==3.7.4
 gdown==5.2.0
