@@ -1,6 +1,6 @@
-flask
-transformers
-torch
-PyPDF2
-spacy
-en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+flask==2.3.3
+transformers==4.40.1
+torch==2.3.0
+PyPDF2==3.0.1
+spacy==3.7.4
+gdown==5.2.0
