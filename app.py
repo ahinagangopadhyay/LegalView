@@ -1,25 +1,39 @@
+import os
+
+# Set safe cache directories for Hugging Face
+os.environ["HF_HOME"] = "/tmp/hf_cache"
+os.environ["GDOWN_CACHE"] = "/tmp/gdown_cache"
+os.environ["XDG_CACHE_HOME"] = "/tmp/.cache"
+os.environ["GDOWN_COOKIE_FILE"] = "/tmp/gdown_cache/cookies.txt"
+
+# Create writable directories
+os.makedirs("/tmp/gdown_cache", exist_ok=True)
+os.makedirs("/tmp/.cache/gdown", exist_ok=True)
+os.makedirs("/tmp/hf_cache", exist_ok=True)
+os.makedirs("/tmp/tmp", exist_ok=True)
+
 from flask import Flask, request, jsonify, render_template
 from transformers import pipeline, DistilBertTokenizerFast, DistilBertForSequenceClassification
 import torch
 import PyPDF2
 import spacy
-import os
 import zipfile
 import gdown
 
 app = Flask(__name__)
 
 # --- Model Configuration ---
-model_zip = "model.zip"
-model_extract_path = "model"  # unzip to this folder
-model_dir = "model/bert_risk_model"  # actual path to model files
+TMP_DIR = "/tmp/tmp"
+model_zip = os.path.join(TMP_DIR, "model.zip")
+model_extract_path = "/tmp/model"
+model_dir = "/tmp/model/bert_risk_model"
 file_id = "1hElMtNrmZp4d4k9s_5qXSUzFstzCC2lt"
 
 # --- Step 1: Download + Extract if not already ---
 def setup_model():
     if not os.path.exists(model_dir):
         print("[INFO] Downloading model from Google Drive...")
-        gdown.download(id=file_id, output=model_zip, quiet=False)
+        gdown.download(id=file_id, output=model_zip, quiet=False, use_cookies=False)
 
         print("[INFO] Extracting model.zip...")
         with zipfile.ZipFile(model_zip, 'r') as zip_ref:
@@ -33,10 +47,8 @@ setup_model()
 
 # --- Step 2: Load NLP and Models ---
 nlp = spacy.load("en_core_web_sm")
-
 tokenizer = DistilBertTokenizerFast.from_pretrained(model_dir)
 model = DistilBertForSequenceClassification.from_pretrained(model_dir)
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
@@ -108,4 +120,3 @@ def analyze():
 # --- Run the App ---
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=7860)
-
