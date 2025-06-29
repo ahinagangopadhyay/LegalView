@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LegalView – Legal Document Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📄 LegalView</h1>
+      <p class="tagline">Smart Legal Document Analyzer – Summarize & Flag Problematic Clauses Instantly</p>
+    </header>
+
+    <form id="analyzeForm" class="card">
+      <label for="text">📋 Paste Legal Text:</label>
+      <textarea name="text" placeholder="Paste legal contract or policy text..." rows="10"></textarea>
+
+      <div class="divider"><span>OR</span></div>
+
+      <label for="file">📎 Upload Legal PDF:</label>
+      <input type="file" name="file" accept=".pdf" />
+
+      <button type="submit">🚀 Analyze Document</button>
+    </form>
+
+    <div id="loading" class="loading" style="display:none;">⏳ Analyzing document… please wait.</div>
+
+    <div id="resultsContainer" class="results card" style="display:none;">
+      <h2>📝 Summary</h2>
+      <pre id="summary"></pre>
+
+      <h2>🚨 Problematic Clauses</h2>
+      <pre id="riskyClauses"></pre>
+
+      <h2>🔍 All Clauses with Problematic Labels</h2>
+      <pre id="classifiedSentences"></pre>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('analyzeForm');
+    const loading = document.getElementById('loading');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultsContainer.style.display = 'none';
+      loading.style.display = 'block';
+
+      const formData = new FormData(form);
+      const file = formData.get('file');
+      const text = formData.get('text').trim();
+      let response;
+
+      try {
+        if (file && file.name) {
+          const uploadData = new FormData();
+          uploadData.append('file', file);
+          response = await fetch('/analyze', { method: 'POST', body: uploadData });
+        } else if (text.length > 0) {
+          response = await fetch('/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          });
+        } else {
+          alert('Please upload a file or paste some text.');
+          loading.style.display = 'none';
+          return;
+        }
+
+        const data = await response.json();
+        loading.style.display = 'none';
+        resultsContainer.style.display = 'block';
+
+        document.getElementById('summary').textContent = data.summary;
+        document.getElementById('riskyClauses').textContent = data.risky_clauses_only.join('\n\n');
+        document.getElementById('classifiedSentences').textContent = data.classified_sentences
+          .map(item => `${item.risk}: ${item.sentence}`).join('\n\n');
+      } catch (error) {
+        console.error(error);
+        alert("An error occurred while analyzing the document.");
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
